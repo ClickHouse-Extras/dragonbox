@@ -60,14 +60,14 @@ namespace jkj::dragonbox {
 					buffer);
 			}
 			else {
-				std::memcpy(buffer, "0E0", 3);
-				return buffer + 3;
+				std::memcpy(buffer, "0", 1);
+				return buffer + 1;
 			}
 		}
 		else {
 			if ((br.u << (ieee754_format_info::exponent_bits + 1)) != 0)
 			{
-				std::memcpy(buffer, "NaN", 3);
+				std::memcpy(buffer, "nan", 3);
 				return buffer + 3;
 			}
 			else {
@@ -75,8 +75,8 @@ namespace jkj::dragonbox {
 					*buffer = '-';
 					++buffer;
 				}
-				std::memcpy(buffer, "Infinity", 8);
-				return buffer + 8;
+				std::memcpy(buffer, "inf", 3);
+				return buffer + 3;
 			}
 		}
 	}
