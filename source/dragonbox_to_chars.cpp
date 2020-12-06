@@ -115,6 +115,68 @@ namespace jkj::dragonbox {
 			auto output = v.significand;
 			auto const olength = decimal_length(output);
 
+			int32_t exp = v.exponent + (int32_t)olength - 1;
+
+			if (exp >= -6 && exp <= 20)
+			{
+  				int index = 0;
+
+				if (exp < 0)
+				{
+					buffer[index++] = '0';
+					buffer[index++] = '.';
+
+					while (++exp)
+						buffer[index++] = '0';
+
+					for (int32_t i = olength - 1; i >= 0; --i)
+					{
+						const uint32_t c = output % 10;
+						output /= 10;
+						buffer[index + i] = '0' + c;
+					}
+					index += olength;
+				}
+				else if (exp + 1 >= olength)
+				{
+					for (int32_t i = olength - 1; i >= 0; --i)
+					{
+						const uint32_t c = output % 10;
+						output /= 10;
+						buffer[index + i] = '0' + c;
+					}
+					index += olength;
+
+					while (exp >= olength)
+					{
+						buffer[index++] = '0';
+						--exp;
+					}
+				}
+				else
+				{
+					for (int32_t i = olength; i > exp + 1; --i)
+					{
+						const uint32_t c = output % 10;
+						output /= 10;
+						buffer[index + i] = '0' + c;
+					}
+					
+					buffer[index + exp + 1] = '.';
+
+					for (int32_t i = exp; i >= 0; --i)
+					{
+						const uint32_t c = output % 10;
+						output /= 10;
+						buffer[index + i] = '0' + c;
+					}
+
+					index += olength + 1;
+				}
+
+				return buffer + index;
+			}
+
 			// Print the decimal digits.
 			// The following code is equivalent to:
 			// for (uint32_t i = 0; i < olength - 1; ++i) {
@@ -190,9 +252,8 @@ namespace jkj::dragonbox {
 			}
 
 			// Print the exponent.
-			*buffer = 'E';
+			*buffer = 'e';
 			++buffer;
-			int32_t exp = v.exponent + (int32_t)olength - 1;
 			if (exp < 0) {
 				*buffer = '-';
 				++buffer;
