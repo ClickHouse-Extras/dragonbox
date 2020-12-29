@@ -117,8 +117,8 @@ namespace jkj::dragonbox {
 			constexpr int significand_bits = ieee754_format_info<format>::significand_bits;
 			constexpr int exponent_bits = ieee754_format_info<format>::exponent_bits;
 			static_assert(detail::value_bits<unsigned int> > exponent_bits);
-			constexpr auto exponent_bits_mask = (unsigned int)(((unsigned int)(1) << exponent_bits) - 1);
-			return (unsigned int)((u >> significand_bits) & exponent_bits_mask);
+			constexpr auto exponent_bits_mask = static_cast<unsigned int>((1U << exponent_bits) - 1);
+			return static_cast<unsigned int>((u >> significand_bits) & exponent_bits_mask);
 		}
 		static constexpr carrier_uint extract_significand_bits(carrier_uint u) noexcept {
 			constexpr int significand_bits = ieee754_format_info<format>::significand_bits;
@@ -203,7 +203,7 @@ namespace jkj::dragonbox {
 		carrier_uint u;
 
 		ieee754_bits() = default;
-		constexpr explicit ieee754_bits(carrier_uint u) noexcept : u{ u } {}
+		constexpr explicit ieee754_bits(carrier_uint _u) noexcept : u{ _u } {}
 		constexpr explicit ieee754_bits(T x) noexcept : u{ ieee754_traits<T>::float_to_carrier(x) } {}
 
 		constexpr T to_float() const noexcept {
@@ -291,22 +291,22 @@ namespace jkj::dragonbox {
 				}
 				else {
 					static_assert(sizeof(UInt) <= sizeof(unsigned int));
-					return __builtin_ctz((unsigned int)n);
+					return __builtin_ctz(static_cast<unsigned int>(n));
 				}
 #elif defined(_MSC_VER)
 #define JKJ_HAS_COUNTR_ZERO_INTRINSIC 1
 				if constexpr (std::is_same_v<UInt, unsigned __int64>) {
 #if defined(_M_X64)
-					return int(_tzcnt_u64(n));
+					return static_cast<int>(_tzcnt_u64(n));
 #else
-					return ((unsigned int)(n) == 0) ?
+					return (static_cast<unsigned int>(n) == 0) ?
 						(32 + (_tzcnt_u32((unsigned int)(n >> 32)))) :
-						(_tzcnt_u32((unsigned int)n));
+						(_tzcnt_u32(static_cast<unsigned int>(n)));
 #endif
 				}
 				else {
 					static_assert(sizeof(UInt) <= sizeof(unsigned int));
-					return int(_tzcnt_u32((unsigned int)n));
+					return int(_tzcnt_u32(static_cast<unsigned int>(n)));
 				}
 #else
 #define JKJ_HAS_COUNTR_ZERO_INTRINSIC 0
@@ -351,7 +351,7 @@ namespace jkj::dragonbox {
 				unsigned __int128	internal_;
 
 				constexpr uint128(std::uint64_t high, std::uint64_t low) noexcept :
-					internal_{ ((unsigned __int128)low) | (((unsigned __int128)high) << 64) } {}
+					internal_{ static_cast<unsigned __int128>(low) | ((static_cast<unsigned __int128>(high)) << 64) } {}
 
 				constexpr uint128(unsigned __int128 u) noexcept : internal_{ u } {}
 
@@ -406,7 +406,7 @@ namespace jkj::dragonbox {
 			// Get 128-bit result of multiplication of two 64-bit unsigned integers
 			JKJ_SAFEBUFFERS inline uint128 umul128(std::uint64_t x, std::uint64_t y) noexcept {
 #if (defined(__GNUC__) || defined(__clang__)) && defined(__SIZEOF_INT128__) && defined(__x86_64__)
-				return (unsigned __int128)(x) * (unsigned __int128)(y);
+				return static_cast<unsigned __int128>(x) * static_cast<unsigned __int128>(y);
 #elif defined(_MSC_VER) && defined(_M_X64)
 				uint128 result;
 				result.low_ = _umul128(x, y, &result.high_);
@@ -431,7 +431,7 @@ namespace jkj::dragonbox {
 
 			JKJ_SAFEBUFFERS inline std::uint64_t umul128_upper64(std::uint64_t x, std::uint64_t y) noexcept {
 #if (defined(__GNUC__) || defined(__clang__)) && defined(__SIZEOF_INT128__) && defined(__x86_64__)
-				auto p = (unsigned __int128)(x) * (unsigned __int128)(y);
+				auto p = static_cast<unsigned __int128>(x) * static_cast<unsigned __int128>(y);
 				return std::uint64_t(p >> 64);
 #elif defined(_MSC_VER) && defined(_M_X64)
 				return __umulh(x, y);
@@ -658,18 +658,18 @@ namespace jkj::dragonbox {
 			struct table_holder {
 				static constexpr table_t<UInt, a, N> table = [] {
 					constexpr auto mod_inverse = modular_inverse<UInt, a>();
-					table_t<UInt, a, N> table{};
+					table_t<UInt, a, N> tbl{};
 					std::common_type_t<UInt, unsigned int> pow_of_mod_inverse = 1;
 					UInt pow_of_a = 1;
 					for (int i = 0; i < N; ++i) {
-						table.mod_inv[i] = UInt(pow_of_mod_inverse);
-						table.max_quotients[i] = UInt(std::numeric_limits<UInt>::max() / pow_of_a);
+						tbl.mod_inv[i] = UInt(pow_of_mod_inverse);
+						tbl.max_quotients[i] = UInt(std::numeric_limits<UInt>::max() / pow_of_a);
 
 						pow_of_mod_inverse *= mod_inverse;
 						pow_of_a *= a;
 					}
 
-					return table;
+					return tbl;
 				}();
 			};
 
