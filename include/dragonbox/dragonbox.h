@@ -310,20 +310,43 @@ namespace jkj::dragonbox {
 				}
 #else
 #define JKJ_HAS_COUNTR_ZERO_INTRINSIC 0
-				int count = int(value_bits<UInt>);
-
+				int count;
 				auto n32 = std::uint32_t(n);
+
 				if constexpr (value_bits<UInt> > 32) {
 					if (n32 != 0) {
 						count = 31;
 					}
 					else {
 						n32 = std::uint32_t(n >> 32);
-						if (n32 != 0) {
-							count -= 1;
+						if constexpr (value_bits<UInt> == 64) {
+							if (n32 != 0) {
+								count = 63;
+							}
+							else {
+								return 64;
+							}
+						}
+						else {
+							count = value_bits<UInt>;
 						}
 					}
 				}
+				else {
+					if constexpr (value_bits<UInt> == 32) {
+						if (n32 != 0) {
+							count = 31;
+						}
+						else {
+							return 32;
+						}
+					}
+					else {
+						count = value_bits<UInt>;
+					}
+				}
+
+				n32 &= (0 - n32);
 				if constexpr (value_bits<UInt> > 16) {
 					if ((n32 & 0x0000ffff) != 0) count -= 16;
 				}
